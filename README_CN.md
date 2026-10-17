@@ -220,9 +220,11 @@ CPL 数据集采用 **JSONL** 格式存储，每一行表示一条 **CPL 四元�
 当进行完整 CPL 训练时，`"task_win"` 和 `"task_lose"` 字段可以来自相同任务，也可以来自不同任务，代入论文公式 (5)：
 
 ```math
+\begin{aligned}
 \mathcal{L}_{\text{CPL}}(\theta)
-= \mathcal{L}_{\text{intra}}(\theta)
+&= \mathcal{L}_{\text{intra}}(\theta)
 - \mathcal{L}_{\text{cross}}(\theta)
+\end{aligned}
 \tag{5}
 ```
 

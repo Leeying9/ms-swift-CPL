@@ -220,9 +220,11 @@ The `"x_win"` field corresponds to $`x_w^+`$ in Equation (3) of the paper, and `
 When training full CPL, the `"task_win"` and `"task_lose"` fields may come from either the same task or different tasks, and are substituted into Equation (5) of the paper:
 
 ```math
+\begin{aligned}
 \mathcal{L}_{\text{CPL}}(\theta)
-= \mathcal{L}_{\text{intra}}(\theta)
+&= \mathcal{L}_{\text{intra}}(\theta)
 - \mathcal{L}_{\text{cross}}(\theta)
+\end{aligned}
 \tag{5}
 ```
 
