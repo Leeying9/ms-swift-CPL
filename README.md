@@ -1,45 +1,47 @@
 # ms-swift-CPL
 
-本项目基于 **ms-swift** 实现了完整的 **CPL（Cross-Preference Learning）** 训练流程，覆盖：
+**English** | [中文](README_CN.md)
 
-- SFT 训练
-- 数据采样
-- CPL 数据集构建
-- CPL 训练 / 推理 / 评测
+This project implements a complete **CPL (Cross-Preference Learning)** training workflow based on **ms-swift**, covering:
 
-支持多卡 GPU 与 Deepspeed。
+- SFT training
+- Data sampling
+- CPL dataset construction
+- CPL training / inference / evaluation
+
+Multi-GPU training and DeepSpeed are supported.
 
 ---
 
-## 一、环境安装
+## 1. Environment Setup
 
 ```bash
-# 创建并激活 Conda 环境
+# Create and activate a Conda environment
 conda create -n mycpo python=3.10 -y
 conda activate mycpo
 
-# 安装 PyTorch（CUDA 12.4）
+# Install PyTorch (CUDA 12.4)
 pip install torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cu124
 
-# 基础依赖
+# Basic dependencies
 conda install -c conda-forge pyarrow sentencepiece -y
 pip install --upgrade pip
 
-# 安装 ms-swift-CPL
+# Install ms-swift-CPL
 cd ms-swift-CPL
 pip install -e .
 
-# 其他依赖
+# Additional dependencies
 conda install -c conda-forge sentence -y
 pip install deepspeed liger-kernel
 pip install "vllm==0.8.5.post1"
 ```
 
-## 二、整体流程（ms-swift-CPL/CPL_scripts/workflow.sh）
+## 2. Overall Workflow (ms-swift-CPL/CPL_scripts/workflow.sh)
 
-### 1. SFT（监督微调）
+### 1. SFT (Supervised Fine-Tuning)
 
-使用 LoRA 对基础模型（如 Qwen3 / LLaMA3）进行 SFT 训练，得到 adapter：
+Perform SFT on a base model (such as Qwen3 / LLaMA3) using LoRA to obtain an adapter:
 
 ```bash
 swift sft \
@@ -51,19 +53,19 @@ swift sft \
   ...
 ```
 
-该 SFT adapter 将在后续 **采样与 CPL 训练** 中复用。
+This SFT adapter will be reused in the subsequent **sampling and CPL training** stages.
 
 ------
 
-### 2. 基于 SFT 模型进行采样，构建 CPL 数据集
+### 2. Sample from the SFT Model to Build a CPL Dataset
 
-使用 SFT 训练后的模型，在 valid 集上进行采样，生成 CPL 所需数据：
+Use the SFT-trained model to sample from the validation set and generate the data required for CPL:
 
 ```bash
 bash ms-swift-CPL/CPL_scripts/3-sample.sh "${args[@]}"
 ```
 
-采样完成后，会自动生成 **数据集注册代码片段**，路径为：
+After sampling, **dataset registration code snippets** are generated automatically at:
 
 ```text
 dataset/register-2w-mycpo-quanliang-langs/{model_type}/{adapter_name}.out
@@ -71,9 +73,9 @@ dataset/register-2w-mycpo-quanliang-langs/{model_type}/{adapter_name}.out
 
 ------
 
-### 3. 注册自定义 CPL 数据集
+### 3. Register Custom CPL Datasets
 
-将生成的注册代码追加到自定义数据集文件中：
+Append the generated registration code to the custom dataset file:
 
 ```bash
 cat dataset/register-2w-mycpo-quanliang-langs/.../*.out \
@@ -82,26 +84,26 @@ cat dataset/register-2w-mycpo-quanliang-langs/.../*.out \
 
 ------
 
-### 4. CPL 训练 / 推理 / 评测
+### 4. CPL Training / Inference / Evaluation
 
-使用 SFT adapter + 注册好的 CPL 数据集进行训练和评测：
+Use the SFT adapter and the registered CPL dataset for training and evaluation:
 
 ```bash
 bash ms-swift-CPL/CPL_scripts/2-train_and_infer.sh "${args[@]}"
 ```
 
-日志和评测结果会自动输出并保存。
+Logs and evaluation results are output and saved automatically.
 
 ------
 
-## 三、CPL 数据集注册格式说明
+## 3. CPL Dataset Registration Format
 
-CPL 数据集通过 `register_dataset` + `DatasetMeta` 进行注册。
-每个数据集对应一个 **JSONL 文件**，内部为 **CPL 四元组（quadruple）格式**，由 `MyCPOQuadruplePreprocessor` 进行预处理。
+CPL datasets are registered using `register_dataset` and `DatasetMeta`.
+Each dataset corresponds to a **JSONL file** in the **CPL quadruple format**, preprocessed by `MyCPOQuadruplePreprocessor`.
 
 ------
 
-### 1. 完整 CPL（Intra + Cross）
+### 1. Full CPL (Intra + Cross)
 
 ```python
 # CPL
@@ -116,7 +118,7 @@ register_dataset(
 
 ------
 
-### 2. 仅 Intra Preference（无 Cross）
+### 2. Intra Preference Only (Without Cross)
 
 ```python
 # CPL w/o cross
@@ -131,7 +133,7 @@ register_dataset(
 
 ------
 
-### 3. 仅 Cross Preference（无 Intra）
+### 3. Cross Preference Only (Without Intra)
 
 ```python
 # CPL w/o intra
@@ -146,18 +148,18 @@ register_dataset(
 
 ------
 
-### 字段说明
+### Field Descriptions
 
 - **dataset_name**
-  数据集唯一标识名，在训练脚本中通过该名称引用
+  The unique dataset identifier used to reference the dataset in training scripts
 - **dataset_path**
-  CPL 数据集 JSONL 文件路径
+  The path to the CPL dataset JSONL file
 
-### 数据格式
+### Data Format
 
-CPL 数据集采用 **JSONL** 格式存储，每一行表示一条 **CPL 四元组（quadruple）样本**，用于对比学习中的偏好建模。
+CPL datasets are stored in **JSONL** format. Each line represents a **CPL quadruple sample** used for preference modeling in contrastive learning.
 
-#### 示例数据
+#### Example Data
 
 ```json
 {
@@ -179,52 +181,58 @@ CPL 数据集采用 **JSONL** 格式存储，每一行表示一条 **CPL 四元�
 }
 ```
 
-- 当做CPL w/o cross训练时，`"task_win"`和`"task_lose"`字段应都是ctx/xxx，或都是sent/xxx，即来自相同任务；
+### CPL w/o cross (Intra Preference Only)
 
-  其中`"x_win"`字段和`x_lose`字段内容完全一致，对应论文中公式$(2)$的$x$ ; `"y_win"`对应$y^+$ ,`"y_lose"`对应中$y^-$.
+When training CPL w/o cross, the `"task_win"` and `"task_lose"` fields should both be `ctx/xxx` or both be `sent/xxx`, meaning they come from the same task.
 
-$$
+The `"x_win"` and `"x_lose"` fields have identical contents, corresponding to $`x`$ in Equation (2) of the paper; `"y_win"` corresponds to $`y^+`$, and `"y_lose"` corresponds to $`y^-`$.
+
+```math
+\begin{aligned}
 \mathcal{L}_{\text{intra}}(\theta)
-= \mathbb{E}_{(y^+, y^-)\sim P_s}
-\mathcal{L}_{\text{CPO}}(x, y^+, y^-)
+&= \mathbb{E}_{(y^+, y^-)\sim P_s}
+   \mathcal{L}_{\text{CPO}}(x, y^+, y^-) \\
+&\quad + \mathbb{E}_{(y^+, y^-)\sim P_c}
+   \mathcal{L}_{\text{CPO}}((x,c), y^+, y^-)
+\end{aligned}
+\tag{2}
+```
 
-+ \mathbb{E}_{(y^+, y^-)\sim P_c}
-  \mathcal{L}_{\text{CPO}}((x,c), y^+, y^-)
-  \tag{2}
-$$
+### CPL w/o intra (Cross Preference Only)
 
-- 当做CPL w/o intra训练时，`"task_win"`和`"task_lose"`字段应一个是ctx/xxx，另一个是sent/xxx，即来自不同任务；
+When training CPL w/o intra, one of the `"task_win"` and `"task_lose"` fields should be `ctx/xxx` and the other `sent/xxx`, meaning they come from different tasks.
 
-  其中`"x_win"`字段对应论文中公式$(3)$的$x_w^+$ ,`"x_lose"`字段对应论文中公式$(3)$的$x_l^+$ ; `"y_win"`对应$y^+$ ,`"y_lose"`对应中$y^-$.
+The `"x_win"` field corresponds to $`x_w^+`$ in Equation (3) of the paper, and `"x_lose"` corresponds to $`x_l^+`$; `"y_win"` corresponds to $`y^+`$, and `"y_lose"` corresponds to $`y^-`$.
 
-  $$
-  \mathcal{L}_{\text{cross}}(\theta)
-  = \mathbb{E}_{(y_w^+, y_l^+)}
-  \mathcal{L}_{\text{C-CPO}}({x_w^+, x_l^+}, y_w^+, y_l^+)
-  
-  + \mathbb{E}_{(y_w^+, y_l^-)}
-    \mathcal{L}_{\text{C-CPO}}({x_w^+, x_l^-}, y_w^+, y_l^-)
-    \tag{3}
-  $$
+```math
+\begin{aligned}
+\mathcal{L}_{\text{cross}}(\theta)
+&= \mathbb{E}_{(y_w^+, y_l^+)}
+   \mathcal{L}_{\text{C-CPO}}(\{x_w^+, x_l^+\}, y_w^+, y_l^+) \\
+&\quad + \mathbb{E}_{(y_w^+, y_l^-)}
+   \mathcal{L}_{\text{C-CPO}}(\{x_w^+, x_l^-\}, y_w^+, y_l^-)
+\end{aligned}
+\tag{3}
+```
 
-- 当做完整CPL训练时，`"task_win"`和`"task_lose"`字段可以来自同任务，可以来自不同任务,带入公式$(5)$
-  $$
-  \mathcal{L}_{\text{CPL}}(\theta)
-  = \mathcal{L}_{\text{intra}}(\theta)
-  
-  - \mathcal{L}_{\text{cross}}(\theta)
-    
-    \tag{5}
-  $$
+### Full CPL
 
-------
+When training full CPL, the `"task_win"` and `"task_lose"` fields may come from either the same task or different tasks, and are substituted into Equation (5) of the paper:
 
-## 四、注意事项
-
-- 所有脚本中的 **绝对路径需要手动修改**
-- CPL 相关超参数（如 `lambda_intra`, `lambda_cross`, `lr`, `global_bs`）在脚本中已固定
-- 支持多 GPU + Deepspeed Zero-2 训练
-- 在采样和训练阶段使用相同的 tokenizer 与模型版本
+```math
+\mathcal{L}_{\text{CPL}}(\theta)
+= \mathcal{L}_{\text{intra}}(\theta)
+- \mathcal{L}_{\text{cross}}(\theta)
+\tag{5}
+```
 
 ------
 
+## 4. Notes
+
+- **Absolute paths must be updated manually** in all scripts
+- CPL-related hyperparameters (such as `lambda_intra`, `lambda_cross`, `lr`, and `global_bs`) are fixed in the scripts
+- Multi-GPU training with DeepSpeed ZeRO-2 is supported
+- Use the same tokenizer and model version during sampling and training
+
+------
