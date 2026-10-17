@@ -2,6 +2,12 @@
 
 **English** | [中文](README_CN.md)
 
+![Overview of the CPL method](asset/cpl-overview.png)
+
+## Method Overview
+
+**CPL** jointly optimizes sentence-level and context-aware translation in a single model. For each source sentence, candidates are generated with and without context, then ranked by translation quality. **Intra-condition preference learning** distinguishes better and worse translations within each setting; **cross-condition preference learning** compares the best candidate with candidates from the other setting. Together, these signals help the model use informative context and remain robust when context is unhelpful, without changing the model architecture.
+
 This project implements a complete **CPL (Cross-Preference Learning)** training workflow based on **ms-swift**, covering:
 
 - SFT training
